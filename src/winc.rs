@@ -2,7 +2,7 @@ use windows_sys::core::
 {
 	PCSTR, s
 };
-use windows_sys::Win32::Graphics::Gdi::{BitBlt, InvalidateRect};
+use windows_sys::Win32::Graphics::Gdi::{BitBlt, InvalidateRect, HBRUSH, HBITMAP, HDC, HGDIOBJ};
 use windows_sys::Win32::UI::WindowsAndMessaging::
 {
 	CreateWindowExA, KillTimer, MessageBoxA, PostQuitMessage, SetTimer, SetWindowTextA, CREATESTRUCTA, WS_CHILD, WS_VISIBLE
@@ -15,16 +15,17 @@ use windows_sys::Win32::Graphics::Gdi::
 	PAINTSTRUCT, SRCCOPY, NULL_PEN,
 };
 use windows_sys::Win32::System::SystemServices::SS_CENTER;
-use core::{u32, u8, ptr};
+use core::ptr::{null, null_mut};
+use core::{u32, u8};
 use super::tetris;
 use super::res;
 struct  WindowController
 {
 	hwnd: HWND,
-	current_hdc: isize,
-	bitmap_hdc: isize,
-	brush: isize,
-	bitmap: isize,
+	current_hdc: HDC,
+	bitmap_hdc: HDC,
+	brush: HBRUSH,
+	bitmap: HBITMAP,
 	score_window: HWND,
 	htimer: usize,
 }
@@ -38,7 +39,7 @@ impl Empty<PAINTSTRUCT> for PAINTSTRUCT
 {
 	fn empty() -> PAINTSTRUCT
 	{
-		return PAINTSTRUCT { hdc: 0, fErase: 0, rcPaint: RECT::empty(), fRestore : 0, fIncUpdate:0, rgbReserved: [0; 32]  };
+		return PAINTSTRUCT { hdc: null_mut(), fErase: 0, rcPaint: RECT::empty(), fRestore : 0, fIncUpdate:0, rgbReserved: [0; 32]  };
 	}
 }
 
@@ -63,7 +64,19 @@ const TEXT_NEXT: PCSTR = s!("Next:");
 
 static mut CONTROLER:  WindowController = default();
 
-const fn default() -> WindowController { return WindowController { hwnd: 0, current_hdc: 0, bitmap_hdc: 0, brush: 0, bitmap: 0, score_window: 0, htimer: 0}}
+const fn default() -> WindowController
+{ 
+	return WindowController 
+	{ 
+		hwnd: null_mut(), 
+		current_hdc: null_mut(), 
+		bitmap_hdc: null_mut(), 
+		brush: null_mut(), 
+		bitmap: null_mut(), 
+		score_window: null_mut(), 
+		htimer: 0
+	}
+}
 
 pub fn init(hwnd: HWND, lparam: isize)
 {
@@ -79,13 +92,13 @@ pub fn init(hwnd: HWND, lparam: isize)
 			next_location.y,
 			next_location.width,
 			next_location.height,
-			hwnd, 0, hinstance, ptr::null());			
+			hwnd, null_mut(), hinstance, null());			
 		CONTROLER = WindowController 
 		{ 
 			hwnd: hwnd,
 			htimer: SetTimer(hwnd, 1, 0, None),
-			current_hdc: 0, 
-			bitmap_hdc : 0, 
+			current_hdc: null_mut(), 
+			bitmap_hdc : null_mut(), 
 			brush: CreateSolidBrush(RGB!(207, 217, 255)), 
 			bitmap: LoadBitmapA(hinstance, res::IDB_RECT as *const u8), 
 			score_window: CreateWindowExA(0, STATIC_CLASS,EMPTY, dwstyle, 
@@ -93,7 +106,7 @@ pub fn init(hwnd: HWND, lparam: isize)
 				score_location.y,
 				score_location.width,
 				score_location.height,
-				hwnd, 0, hinstance, ptr::null())
+				hwnd, null_mut(), hinstance, null())
 		};
 	}
 }
@@ -166,13 +179,13 @@ pub fn start_painting()
 	{
 		CONTROLER.current_hdc = BeginPaint(CONTROLER.hwnd, &mut ps);
 		SelectObject(CONTROLER.current_hdc, CONTROLER.brush);
-		SelectObject(CONTROLER.current_hdc, NULL_PEN as isize);
+		SelectObject(CONTROLER.current_hdc, NULL_PEN as HGDIOBJ);
 		Rectangle(CONTROLER.current_hdc, tetris::BOARD_RECT.left, tetris::BOARD_RECT.top, tetris::BOARD_RECT.right, tetris::BOARD_RECT.bottom); 
 		CONTROLER.bitmap_hdc = CreateCompatibleDC(CONTROLER.current_hdc);
 		SelectObject(CONTROLER.bitmap_hdc, CONTROLER.bitmap);
 		tetris::draw();
 		DeleteDC(CONTROLER.bitmap_hdc);
-		CONTROLER.bitmap_hdc = 0;
+		CONTROLER.bitmap_hdc = null_mut();
 		EndPaint(CONTROLER.hwnd, &mut ps);
 	}
 }

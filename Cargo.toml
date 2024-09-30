@@ -7,7 +7,7 @@ edition = "2021"
 embed-resource = "2.4"
 
 [dependencies]
-windows-sys = { version = "0.52.0", features = [
+windows-sys = { version = "0.59.0", features = [
 	"Win32_Foundation",
 	"Win32_UI_WindowsAndMessaging",
 	"Win32_System_Threading",
@@ -25,6 +25,3 @@ lto = "fat"
 [profile.release]
 panic ="abort"
 lto = "fat"
-
-[target.x86_64-pc-windows-gnu]
-rustc-link-arg = ["-nostartfilesuuuuuuuuuuu"]
