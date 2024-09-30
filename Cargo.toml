@@ -1,0 +1,30 @@
+[package]
+name = "tetris"
+version = "0.1.0"
+edition = "2021"
+
+[build-dependencies]
+embed-resource = "2.4"
+
+[dependencies]
+windows-sys = { version = "0.52.0", features = [
+	"Win32_Foundation",
+	"Win32_UI_WindowsAndMessaging",
+	"Win32_System_Threading",
+	"Win32_System_LibraryLoader",
+	"Win32_Security_Cryptography",
+	"Win32_Graphics_Gdi",
+	"Win32_System_SystemServices",
+	"Win32_UI_Input_KeyboardAndMouse"
+] }
+
+[profile.dev]
+panic ="abort"
+lto = "fat"
+
+[profile.release]
+panic ="abort"
+lto = "fat"
+
+[target.x86_64-pc-windows-gnu]
+rustc-link-arg = ["-nostartfilesuuuuuuuuuuu"]

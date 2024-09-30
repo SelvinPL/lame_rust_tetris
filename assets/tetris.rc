@@ -1,0 +1,21 @@
+#include "windows.h"
+
+#define IDR_MANIFEST		1
+#define IDS_APP_TITLE		106
+#define IDI_TETRIS			107
+#define IDI_SMALL			108
+#define IDC_TETRIS			109
+#define IDB_RECT			110
+
+LANGUAGE LANG_NEUTRAL, SUBLANG_NEUTRAL
+
+IDI_TETRIS				ICON			"tetris.ico"
+IDI_SMALL				ICON			"small.ico"
+IDB_RECT				BITMAP			"rect.bmp"
+IDR_MANIFEST			RT_MANIFEST		"tetris.exe.manifest"
+STRINGTABLE
+BEGIN
+	IDS_APP_TITLE			"Tetris"
+	IDC_TETRIS				"TETRIS"
+END
+
