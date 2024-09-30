@@ -12,7 +12,7 @@ mod res;
 
 #[no_mangle]
 #[allow(non_snake_case)]
-unsafe fn mainCRTStartup() 
+unsafe fn mainCRTStartup()
 {
 	use windows_sys::Win32::System::Threading::ExitProcess;
 	ExitProcess(winmain::real_main() as u32);

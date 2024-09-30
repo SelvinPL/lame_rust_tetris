@@ -9,7 +9,7 @@ use windows_sys::Win32::Foundation::RECT;
 const FRAM: u32 = 2;
 const X_MAX: u32 = 8;
 const Y_MAX: u32 = 17;
-const X_START: u32 = 3;
+const X_START: i32 = 3;
 const Y_START: u32 = 0;
 const BLOCK_SIZE: u32 = 17;
 pub const BOARD_RECT: RECT = RECT
@@ -30,7 +30,7 @@ pub struct Tetris
 	current_shape_variants_count: i32,
 	score: u32,
 	ground : [[bool; Y_MAX as usize + 4]; X_MAX as usize + 5],
-	x: u32,
+	x: i32,
 	y: u32,
 }
 
@@ -85,15 +85,21 @@ static mut TETRIS: Tetris = Tetris
 	ground: [[false; Y_MAX as usize + 4]; X_MAX as usize + 5],
 };
 
+#[inline(always)]
+fn safe_u32(i: i32) -> u32
+{
+	return if i > 0 { i as u32 } else { 0 };
+}
+
 fn draw_current()
 {
 	unsafe 
 	{
 		let rc: RECT = RECT!
 		(
-			FRAM / 2 + TETRIS.x * BLOCK_SIZE,
+			FRAM / 2 + safe_u32(TETRIS.x) * BLOCK_SIZE,
 			FRAM / 2 + TETRIS.y * BLOCK_SIZE,
-			FRAM / 2 + (TETRIS.x + 4) * BLOCK_SIZE,
+			FRAM / 2 + safe_u32(TETRIS.x + 4) * BLOCK_SIZE,
 			FRAM / 2 + (TETRIS.y + 4) * BLOCK_SIZE
 		);
 		winc::invalidate(&rc, false);
@@ -159,7 +165,7 @@ fn check_collision(direction: &Direction, shape_to_check: i32) -> bool {
 		{
 			unsafe 
 			{
-				if bit!(shape_to_check, x, y) && TETRIS.ground[TETRIS.x as usize + x + dx][y + TETRIS.y as usize+ dy]
+				if bit!(shape_to_check, x, y) && TETRIS.ground[safe_u32(TETRIS.x + x as i32 + dx as i32) as usize][y + TETRIS.y as usize+ dy]
 				{
 					return true;
 				}
@@ -179,7 +185,7 @@ pub fn draw()
 			{
 				if bit!(TETRIS.current_shape, x, y) 
 				{
-					winc::bit_blt(FRAM / 2 + TETRIS.x * BLOCK_SIZE + x * BLOCK_SIZE , FRAM/ 2 + TETRIS.y * BLOCK_SIZE + y * BLOCK_SIZE, BLOCK_SIZE);
+					winc::bit_blt(FRAM / 2 + safe_u32(TETRIS.x + x as i32) * BLOCK_SIZE, FRAM/ 2 + (TETRIS.y + y) * BLOCK_SIZE, BLOCK_SIZE);
 				}
 				if bit!(TETRIS.next_shape, x, y) 
 				{
@@ -337,9 +343,9 @@ pub fn block_move(direction: Direction)
 					TETRIS.x -= 1;
 					RECT!
 					(
-						FRAM / 2 + TETRIS.x * BLOCK_SIZE,
+						FRAM / 2 + safe_u32(TETRIS.x) * BLOCK_SIZE,
 						FRAM / 2 + TETRIS.y * BLOCK_SIZE,
-						FRAM / 2 + (TETRIS.x + 5) * BLOCK_SIZE,
+						FRAM / 2 + safe_u32(TETRIS.x + 5) * BLOCK_SIZE,
 						FRAM / 2 + (TETRIS.y + 4) * BLOCK_SIZE
 					)
 				},
@@ -348,9 +354,9 @@ pub fn block_move(direction: Direction)
 					TETRIS.x += 1;
 					RECT!
 					(
-						FRAM / 2 + (TETRIS.x - 1) * BLOCK_SIZE,
+						FRAM / 2 + safe_u32(TETRIS.x - 1) * BLOCK_SIZE,
 						FRAM / 2 + TETRIS.y * BLOCK_SIZE,
-						FRAM / 2 + (TETRIS.x + 4) * BLOCK_SIZE,
+						FRAM / 2 + safe_u32(TETRIS.x + 4) * BLOCK_SIZE,
 						FRAM / 2 + (TETRIS.y + 4) * BLOCK_SIZE
 					)
 				},
@@ -359,9 +365,9 @@ pub fn block_move(direction: Direction)
 					TETRIS.y += 1;
 					RECT!
 					(
-						FRAM / 2 + TETRIS.x * BLOCK_SIZE,
+						FRAM / 2 + safe_u32(TETRIS.x) * BLOCK_SIZE,
 						FRAM / 2 + (TETRIS.y - 1) * BLOCK_SIZE,
-						FRAM / 2 + (TETRIS.x + 4) * BLOCK_SIZE,
+						FRAM / 2 + safe_u32(TETRIS.x + 4) * BLOCK_SIZE,
 						FRAM / 2 + (TETRIS.y + 4) * BLOCK_SIZE
 					)
 				},				
@@ -379,7 +385,7 @@ pub fn block_move(direction: Direction)
 					{
 						for y in 0..4u32
 						{	
-							let ix = (TETRIS.x + 1 + x) as usize;
+							let ix = safe_u32(TETRIS.x + 1 + x as i32) as usize;
 							let iy = (TETRIS.y + y) as usize;
 							set_ground!(ix, iy,
 								bit!(TETRIS.current_shape, x, y) |
