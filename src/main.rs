@@ -18,3 +18,9 @@ fn mainCRTStartup()
 {
 	unsafe { ExitProcess(winmain::real_main() as u32); }
 }
+
+#[no_mangle]
+unsafe extern "cdecl" fn memset(dest: isize, _:i32, _: usize) -> isize
+{
+	return dest;
+}
