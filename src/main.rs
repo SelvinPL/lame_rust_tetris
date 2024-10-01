@@ -2,6 +2,8 @@
 #![no_main]
 #![windows_subsystem = "windows"]
 
+use windows_sys::Win32::System::Threading::ExitProcess;
+
 mod winmain;
 mod game;
 mod panic;
@@ -9,11 +11,11 @@ mod random;
 mod tetris;
 mod winc;
 mod res;
+mod pause_control;
 
 #[no_mangle]
 #[allow(non_snake_case)]
-unsafe fn mainCRTStartup()
+fn mainCRTStartup()
 {
-	use windows_sys::Win32::System::Threading::ExitProcess;
-	ExitProcess(winmain::real_main() as u32);
+	unsafe { ExitProcess(winmain::real_main() as u32); }
 }

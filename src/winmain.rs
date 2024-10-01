@@ -1,12 +1,8 @@
-use super::game;
-use super::random;
-use super::res;
-
-use core::ptr::{null, null_mut};
-use core::{u32, u8};
-use windows_sys::Win32::Graphics::Gdi::{UpdateWindow, COLOR_WINDOW};
+use core::{ u32, u8 };
+use core::ptr::{ null, null_mut };
+use windows_sys::Win32::Graphics::Gdi::{ UpdateWindow, COLOR_WINDOW };
 use windows_sys::Win32::System::LibraryLoader::GetModuleHandleA;
-use windows_sys::Win32::UI::Input::KeyboardAndMouse::*;
+use windows_sys::Win32::UI::Input::KeyboardAndMouse::{ VK_RIGHT, VK_LEFT, VK_UP, VK_DOWN, VK_SPACE, VK_RETURN, VK_H, VK_I, VK_N };
 use windows_sys::Win32::UI::WindowsAndMessaging::
 {
 	CreateWindowExA, DefWindowProcA, DispatchMessageA, GetMessageA, LoadAcceleratorsA, 
@@ -15,10 +11,10 @@ use windows_sys::Win32::UI::WindowsAndMessaging::
 	CS_HREDRAW, CS_VREDRAW, CW_USEDEFAULT, SW_SHOWDEFAULT, WS_SYSMENU, WS_VISIBLE, 
 	WM_CREATE, WM_DESTROY, WM_PAINT, WM_TIMER, WM_KEYDOWN, WM_KILLFOCUS
 };
-use windows_sys::Win32::Foundation::
-{
-	POINT, HWND, WPARAM, LPARAM, LRESULT
-};
+use windows_sys::Win32::Foundation::{ POINT, HWND, WPARAM, LPARAM, LRESULT };
+use super::game::Game;
+use super::random;
+use super::res;
 
 const MAX_LOADSTRING: usize = 256;
 
@@ -75,26 +71,27 @@ pub unsafe fn real_main() -> i32
 	return 0;
 }
 
+static mut GAME: Game = Game::new();
 
 unsafe extern "system" fn wnd_proc(hwnd: HWND, message: u32, wparam: WPARAM, lparam: LPARAM) -> LRESULT
 {
 	match message 
 	{
-		WM_CREATE => 
+		WM_CREATE =>
 		{
-			game::init(hwnd, lparam);
+			GAME.init(hwnd, lparam);
 		},
-		WM_PAINT => 
+		WM_PAINT =>
 		{
-			game::paint();
+			GAME.paint();
 		},
 		WM_TIMER => 
 		{
-			game::timer_tick();
+			GAME.timer_tick();
 		},
 		WM_DESTROY => 
 		{
-			game::destroy();
+			GAME.destroy();
 		},
 		WM_KEYDOWN =>
 		{
@@ -102,42 +99,42 @@ unsafe extern "system" fn wnd_proc(hwnd: HWND, message: u32, wparam: WPARAM, lpa
 			{
 				VK_UP =>
 				{
-					game::up();
+					GAME.up();
 				},
 				VK_DOWN =>
 				{
-					game::down();
+					GAME.down();
 				},
 				VK_LEFT =>
 				{
-					game::left();
+					GAME.left();
 				},
 				VK_RIGHT =>
 				{
-					game::right();
+					GAME.right();
 				},
 				VK_RETURN | VK_SPACE =>
 				{
-					game::set_pause(game::Pause::Toggle);
+					GAME.toggle_pause();
 				},
 				VK_H =>
 				{
-					game::help();
+					GAME.help();
 				},
 				VK_I =>
 				{
-					game::about();
+					GAME.about();
 				},
 				VK_N =>
 				{
-					game::new_game();
+					GAME.new_game();
 				},
 				_ => {}
 			}
 		},
 		WM_KILLFOCUS =>
 		{
-			game::set_pause(game::Pause::True);
+			GAME.pause();
 		},
 		_ => return DefWindowProcA(hwnd, message, wparam, lparam),
 	}

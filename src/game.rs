@@ -1,145 +1,129 @@
-use super::winc;
-use super::tetris;
+use super::tetris::{ Tetris, Direction };
+use super::winc::WindowController;
+use super::pause_control::PauseControl;
 
 use windows_sys::core::s;
 
 use windows_sys::Win32::Foundation::HWND;
 
-struct Game 
+pub struct Game 
 {
 	timer_count: usize,
-	pause: bool
+	tetris: Tetris,
+	windows: WindowController,
+	pause_control: PauseControl
 }
 
-static mut GAME: Game = Game { timer_count: 0, pause: false };
-
-pub fn init(hwnd: HWND, lparam: isize)
+impl Game
 {
-	winc::init(hwnd, lparam);
-	tetris::new_game();
-	unsafe
+	pub const fn new() -> Self 
 	{
-		GAME.timer_count = 1;
+		Game
+		{ 
+			timer_count: 0,
+			tetris: Tetris::new(),
+			pause_control: PauseControl::new(),
+			windows: WindowController::empty()
+		}
 	}
-}
 
-pub fn paint()
-{
-	winc::start_painting();
-}
+	pub fn init(&mut self, hwnd: HWND, lparam: isize)
+	{
+		self.windows = WindowController::new(hwnd, lparam);
+		self.timer_count = 1;
+		self.tetris.new_game(&self.windows);
+	}
 
-pub fn destroy()
-{
-	winc::destroy();
-}
+	pub fn paint(&mut self)
+	{
+		self.windows.start_painting(&mut self.tetris);
+	}
 
-pub unsafe fn timer_tick()
-{
-	unsafe
-    {
-		if !GAME.pause
+	pub fn destroy(&self)
+	{
+		self.windows.destroy();
+	}
+
+	pub fn timer_tick(&mut self)
+	{
+		if self.pause_control.is_not_paused()
 		{
-			GAME.timer_count+=1;
-			if GAME.timer_count > 20
+			self.timer_count+=1;
+			if self.timer_count > 20
 			{
-				GAME.timer_count = 0;
-				tetris::block_move(tetris::Direction::Down);
+				self.timer_count = 0;
+				self.tetris.block_move(Direction::Down, &mut self.pause_control, &self.windows);
 			}
 		}
 	}
-}
 
-pub fn up() 
-{
-	unsafe
+	pub fn up(&mut self) 
 	{
-		if !GAME.pause
+		if self.pause_control.is_not_paused()
 		{
-			tetris::block_rotate();
+			self.tetris.block_rotate(&self.windows);
 		}
 	}
-}
 
-pub fn down()
-{
-	unsafe
+	pub fn down(&mut self)
 	{
-		if !GAME.pause
+		if self.pause_control.is_not_paused()
 		{
-			tetris::block_move(tetris::Direction::Down);
+			self.tetris.block_move(Direction::Down, &mut self.pause_control, &self.windows);
 		}
 	}
-}
-	
-pub fn left()
-{
-	unsafe
+		
+	pub fn left(&mut self)
 	{
-		if !GAME.pause
+		if self.pause_control.is_not_paused()
 		{
-			tetris::block_move(tetris::Direction::Left);
+			self.tetris.block_move(Direction::Left, &mut self.pause_control, &self.windows);
 		}
 	}
-}
 
-pub fn right()
-{
-	unsafe
+	pub fn right(&mut self)
 	{
-		if !GAME.pause
+		if self.pause_control.is_not_paused()
 		{
-			tetris::block_move(tetris::Direction::Right);
+			self.tetris.block_move(Direction::Right, &mut self.pause_control, &self.windows);
 		}
 	}
-}
 
-pub fn set_pause(pause: Pause)  
-{
-	unsafe 
+	pub fn pause(&mut self)
 	{
-		match pause
+		self.pause_control.pause();
+	}
+
+	pub fn toggle_pause(&mut self)
+	{
+		self.pause_control.toggle();
+	}
+
+	pub fn help(&mut self)
+	{
+		let paused = self.pause_control.is_paused();
+		self.pause_control.pause();
+		self.windows.message_box(s!("h - Help\ni - About\nspace, return - Pause\nn - New game"), s!("Help"));
+		if !paused
 		{
-			Pause::True => GAME.pause = true,
-			Pause::False => GAME.pause = false,
-			Pause::Toggle => GAME.pause = !GAME.pause,
+			self.pause_control.unpause();
 		}
 	}
-}
 
-pub fn help()
-{
-	unsafe
+	pub fn about(&mut self)
 	{
-		let paused = GAME.pause;
-		GAME.pause = true;
-		winc::message_box(s!("h - Help\ni - About\nspace, return - Pause\nn - New game"), s!("Help"));
-		GAME.pause = paused;
+		let paused = self.pause_control.is_paused();
+		self.pause_control.pause();
+		self.windows.message_box(s!("\n\tTetris 2001-2024 Selvin\t\n"), s!("About..."));
+		if !paused
+		{
+			self.pause_control.unpause();
+		}
 	}
-}
 
-pub fn about()
-{
-	unsafe
+	pub fn new_game(&mut self)
 	{
-		let paused = GAME.pause;
-		GAME.pause = true;
-		winc::message_box(s!("\n\tTetris 2001-2024 Selvin\t\n"), s!("About..."));
-		GAME.pause = paused;
+		self.tetris.new_game(&self.windows);
+		self.pause_control.unpause();
 	}
-}
-
-pub fn new_game()
-{
-	unsafe
-	{
-		tetris::new_game();
-		GAME.pause = false;
-	}
-}
-
-pub enum Pause
-{
-	True,
-	False,
-	Toggle
 }
