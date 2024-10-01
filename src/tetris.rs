@@ -1,6 +1,5 @@
 use core::ptr;
-use crate::pause_control::PauseControl;
-use super::random;
+use super::random::Random;
 use super::winc::WindowController;
 use windows_sys::core::s;
 use windows_sys::Win32::Foundation::RECT;
@@ -32,6 +31,7 @@ pub struct Tetris
 	ground : [[bool; Y_MAX as usize + 4]; X_MAX as usize + 5],
 	x: i32,
 	y: u32,
+	paused: bool
 }
 
 pub struct LocationSize
@@ -94,6 +94,7 @@ impl Tetris
 			current_shape_variant: 0,
 			current_shape_variants_count: 0,
 			ground: [[false; Y_MAX as usize + 4]; X_MAX as usize + 5],
+			paused: true
 		}
 	}
 
@@ -121,7 +122,7 @@ impl Tetris
 		windows.invalidate(&rc, true);
 	}
 
-	pub fn new_block(&mut self, windows: &WindowController)
+	pub fn new_block(&mut self, windows: &WindowController, random: &Random)
 	{
 		self.x = X_START;
 		self.y = Y_START;
@@ -130,7 +131,7 @@ impl Tetris
 		self.current_shape_variant = 0;
 		self.current_shape_variants_count = SHAPES[self.current_shape_type][0];
 		self.draw_current(windows);
-		self.next_shape_type = (random::next_byte() % 7) as usize;
+		self.next_shape_type = (random.next_byte() % 7) as usize;
 		self.next_shape = SHAPES[self.next_shape_type][1];
 		self.draw_next(windows);
 	}
@@ -201,7 +202,7 @@ impl Tetris
 		}
 	}
 
-	pub fn new_game(&mut self, windows: &WindowController) 
+	pub fn new_game(&mut self, windows: &WindowController, random: &Random) 
 	{
 		self.score = 0;
 		windows.show_score(self.score);
@@ -221,30 +222,32 @@ impl Tetris
 		{	
 			set_ground!(self.ground, x + 1, Y_MAX, true);
 		}
-		self.next_shape_type = (random::next_byte() % 7) as usize;
+		self.next_shape_type = (random.next_byte() % 7) as usize;
 		self.next_shape = SHAPES[self.next_shape_type][1];
 		windows.invalidate(ptr::null(), true);
-		self.new_block(windows);
+		self.new_block(windows, random);
+		self.paused = false;
 	}
 
 	pub fn block_rotate(&mut self, windows: &WindowController)
 	{
-		let rotated_variant = ((self.current_shape_variant as i32 + 1) % self.current_shape_variants_count) as usize;
-		let rotated_shape = SHAPES[self.current_shape_type][rotated_variant + 1];
-		if !self.check_collision(&Direction::None, rotated_shape)
+		if !self.paused
 		{
-			self.current_shape_variant = rotated_variant;
-			self.current_shape = rotated_shape;
-			self.draw_current(windows);
+			let rotated_variant = ((self.current_shape_variant as i32 + 1) % self.current_shape_variants_count) as usize;
+			let rotated_shape = SHAPES[self.current_shape_type][rotated_variant + 1];
+			if !self.check_collision(&Direction::None, rotated_shape)
+			{
+				self.current_shape_variant = rotated_variant;
+				self.current_shape = rotated_shape;
+				self.draw_current(windows);
+			}
 		}
 	}
 
-	fn game_over(&mut self, pause_control: &mut PauseControl, windows: &WindowController)
+	fn game_over(&mut self, windows: &WindowController)
 	{
-		pause_control.pause();
+		self.paused = true;
 		windows.message_box(s!("You lose"), s!("Game Over"));
-		self.new_game(windows);
-		pause_control.unpause();
 	}
 
 	fn remove_lines(&mut self, size: usize, &lines_to_remove: &[usize; Y_MAX as usize + 1])
@@ -267,7 +270,7 @@ impl Tetris
 		}
 	}
 
-	fn check_line(&mut self, pause_control: &mut PauseControl, windows: &WindowController)
+	fn check_line(&mut self, windows: &WindowController) -> bool
 	{
 		let mut size = 0usize;
 		let mut lines_to_remove = [0usize; Y_MAX as usize + 1];
@@ -297,79 +300,109 @@ impl Tetris
 			{
 				if (self.ground[x + 1][y] || y == Y_MAX as usize) && y < 2
 				{
-					self.game_over(pause_control, windows);
-					return;
+					return true;
+				}
+			}
+		}
+		return false;
+	}
+
+	pub fn block_move(&mut self, direction: Direction, windows: &WindowController, random: &Random)
+	{
+		if !self.paused
+		{
+			if !self.check_collision(&direction, self.current_shape)
+			{
+				let rc = match direction
+				{
+					Direction::Left =>
+					{
+						self.x -= 1;
+						RECT!
+						(
+							FRAM / 2 + safe_u32(self.x) * BLOCK_SIZE,
+							FRAM / 2 + self.y * BLOCK_SIZE,
+							FRAM / 2 + safe_u32(self.x + 5) * BLOCK_SIZE,
+							FRAM / 2 + (self.y + 4) * BLOCK_SIZE
+						)
+					},
+					Direction::Right =>
+					{
+						self.x += 1;
+						RECT!
+						(
+							FRAM / 2 + safe_u32(self.x - 1) * BLOCK_SIZE,
+							FRAM / 2 + self.y * BLOCK_SIZE,
+							FRAM / 2 + safe_u32(self.x + 4) * BLOCK_SIZE,
+							FRAM / 2 + (self.y + 4) * BLOCK_SIZE
+						)
+					},
+					Direction::Down =>
+					{
+						self.y += 1;
+						RECT!
+						(
+							FRAM / 2 + safe_u32(self.x) * BLOCK_SIZE,
+							FRAM / 2 + (self.y - 1) * BLOCK_SIZE,
+							FRAM / 2 + safe_u32(self.x + 4) * BLOCK_SIZE,
+							FRAM / 2 + (self.y + 4) * BLOCK_SIZE
+						)
+					},				
+					_ => { RECT!(0, 0, 0, 0) }
+				};
+				windows.invalidate(&rc, false);
+			}
+			else 
+			{
+				match direction
+				{
+					Direction::Down =>
+					{
+						for x in 0..4u32
+						{
+							for y in 0..4u32
+							{	
+								let ix = safe_u32(self.x + 1 + x as i32) as usize;
+								let iy = (self.y + y) as usize;
+								set_ground!(self.ground, ix, iy,
+									bit!(self.current_shape, x, y) |
+									self.ground[ix][iy]);
+							}
+						}					
+						if self.check_line(windows)
+						{
+							self.game_over(windows);
+							self.new_game(windows, random);
+						}
+						else
+						{
+							self.new_block(windows, random);
+						}
+					},
+					_ => {}
 				}
 			}
 		}
 	}
 
-	pub fn block_move(&mut self, direction: Direction, pause_control: &mut PauseControl, windows: &WindowController)
+	pub fn pause(&mut self)
 	{
-		if !self.check_collision(&direction, self.current_shape)
-		{
-			let rc = match direction
-			{
-				Direction::Left =>
-				{
-					self.x -= 1;
-					RECT!
-					(
-						FRAM / 2 + safe_u32(self.x) * BLOCK_SIZE,
-						FRAM / 2 + self.y * BLOCK_SIZE,
-						FRAM / 2 + safe_u32(self.x + 5) * BLOCK_SIZE,
-						FRAM / 2 + (self.y + 4) * BLOCK_SIZE
-					)
-				},
-				Direction::Right =>
-				{
-					self.x += 1;
-					RECT!
-					(
-						FRAM / 2 + safe_u32(self.x - 1) * BLOCK_SIZE,
-						FRAM / 2 + self.y * BLOCK_SIZE,
-						FRAM / 2 + safe_u32(self.x + 4) * BLOCK_SIZE,
-						FRAM / 2 + (self.y + 4) * BLOCK_SIZE
-					)
-				},
-				Direction::Down =>
-				{
-					self.y += 1;
-					RECT!
-					(
-						FRAM / 2 + safe_u32(self.x) * BLOCK_SIZE,
-						FRAM / 2 + (self.y - 1) * BLOCK_SIZE,
-						FRAM / 2 + safe_u32(self.x + 4) * BLOCK_SIZE,
-						FRAM / 2 + (self.y + 4) * BLOCK_SIZE
-					)
-				},				
-				_ => { RECT!(0, 0, 0, 0) }
-			};
-			windows.invalidate(&rc, false);
-		}
-		else 
-		{
-			match direction
-			{
-				Direction::Down =>
-				{
-					for x in 0..4u32
-					{
-						for y in 0..4u32
-						{	
-							let ix = safe_u32(self.x + 1 + x as i32) as usize;
-							let iy = (self.y + y) as usize;
-							set_ground!(self.ground, ix, iy,
-								bit!(self.current_shape, x, y) |
-								self.ground[ix][iy]);
-						}
-					}					
-					self.check_line(pause_control, windows);
-					self.new_block(windows);
-				},
-				_ => {}
-			}
-		}
+		self.paused = true;
+	}
+
+	pub fn unpause(&mut self)
+	{
+		self.paused = false;
+	}
+
+	pub fn toggle(&mut self)
+	{
+		self.paused = !self.paused;
+	}
+
+	pub const fn is_paused(&self) -> bool
+	{
+		self.paused
 	}
 }
 

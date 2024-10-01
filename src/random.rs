@@ -10,41 +10,49 @@ use windows_sys::Win32::Security::Cryptography::
 
 const RANDOM_CONTAINER: PCSTR = s!("RANDOM_CONTAINER");
 
-static mut HCRYPTPROV: usize = 0;
-
-pub fn init() -> bool
+pub struct Random
 {
-	unsafe 
+	hcryptprov: usize
+}
+
+impl Random
+{
+	pub const fn new() -> Self { Random { hcryptprov: 0} }
+
+	pub fn init(&mut self) -> bool
 	{
-		if CryptAcquireContextA(addr_of_mut!(HCRYPTPROV), RANDOM_CONTAINER, null(), PROV_RSA_FULL, 0) == 0
+		unsafe 
 		{
-			if GetLastError() == NTE_BAD_KEYSET as u32
+			if CryptAcquireContextA(addr_of_mut!(self.hcryptprov), RANDOM_CONTAINER, null(), PROV_RSA_FULL, 0) == 0
 			{
-				if CryptAcquireContextA(addr_of_mut!(HCRYPTPROV), RANDOM_CONTAINER, null(), PROV_RSA_FULL, CRYPT_NEWKEYSET) == 0
+				if GetLastError() == NTE_BAD_KEYSET as u32
 				{
-					return false;
+					if CryptAcquireContextA(addr_of_mut!(self.hcryptprov), RANDOM_CONTAINER, null(), PROV_RSA_FULL, CRYPT_NEWKEYSET) == 0
+					{
+						return false;
+					}
 				}
+				return false;
 			}
-			return false;
+			return true;
 		}
-		return true;
 	}
-}
 
-pub fn release()
-{
-	unsafe
+	pub fn release(&self)
 	{
-		CryptReleaseContext(HCRYPTPROV, 0);
+		unsafe
+		{
+			CryptReleaseContext(self.hcryptprov, 0);
+		}
 	}
-}
 
-pub fn next_byte() -> u8
-{
-	let mut rand = [0u8; 1]; 
-	unsafe 
+	pub fn next_byte(&self) -> u8
 	{
-		CryptGenRandom(HCRYPTPROV, 1, rand.as_mut_ptr());
+		let mut rand = [0u8; 1]; 
+		unsafe 
+		{
+			CryptGenRandom(self.hcryptprov, 1, rand.as_mut_ptr());
+		}
+		return rand[0];
 	}
-	return rand[0];
 }

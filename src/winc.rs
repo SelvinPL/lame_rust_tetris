@@ -5,7 +5,7 @@ use windows_sys::Win32::Foundation::{ HINSTANCE, HWND, RECT };
 use windows_sys::Win32::Graphics::Gdi::{ BitBlt, InvalidateRect, HBRUSH, HBITMAP, HDC, HGDIOBJ };
 use windows_sys::Win32::UI::WindowsAndMessaging::
 {
-	CreateWindowExA, KillTimer, MessageBoxA, PostQuitMessage, SetTimer, SetWindowTextA, CREATESTRUCTA, WS_CHILD, WS_VISIBLE
+	CreateWindowExA, KillTimer, MessageBoxA, PostQuitMessage, SetTimer, SetWindowTextA, WS_CHILD, WS_VISIBLE
 };
 use windows_sys::Win32::Graphics::Gdi::
 {
@@ -57,12 +57,10 @@ impl WindowController
 		}
 	}
 
-	pub fn new(hwnd: HWND, lparam: isize) -> Self
+	pub fn new(hwnd: HWND, hinstance: HINSTANCE) -> Self
 	{ 
 		unsafe 
 		{
-			let create_struct = *(lparam as *const CREATESTRUCTA); 
-			let hinstance: HINSTANCE = create_struct.hInstance;
 			let dwstyle = WS_CHILD | WS_VISIBLE | SS_CENTER;
 			let next_location = tetris::get_next_location_size();
 			let score_location = tetris::get_score_location_size();

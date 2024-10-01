@@ -1,17 +1,16 @@
-use super::tetris::{ Tetris, Direction };
-use super::winc::WindowController;
-use super::pause_control::PauseControl;
 
 use windows_sys::core::s;
-
-use windows_sys::Win32::Foundation::HWND;
+use windows_sys::Win32::Foundation::{HINSTANCE, HWND};
+use super::tetris::{ Tetris, Direction };
+use super::winc::WindowController;
+use super::random::Random;
 
 pub struct Game 
 {
 	timer_count: usize,
 	tetris: Tetris,
 	windows: WindowController,
-	pause_control: PauseControl
+	random: Random
 }
 
 impl Game
@@ -22,16 +21,16 @@ impl Game
 		{ 
 			timer_count: 0,
 			tetris: Tetris::new(),
-			pause_control: PauseControl::new(),
-			windows: WindowController::empty()
+			windows: WindowController::empty(),
+			random: Random::new()
 		}
 	}
 
-	pub fn init(&mut self, hwnd: HWND, lparam: isize)
+	pub fn init(&mut self, hwnd: HWND, histance: HINSTANCE)
 	{
-		self.windows = WindowController::new(hwnd, lparam);
+		self.windows = WindowController::new(hwnd, histance);
 		self.timer_count = 1;
-		self.tetris.new_game(&self.windows);
+		self.tetris.new_game(&self.windows, &self.random);
 	}
 
 	pub fn paint(&mut self)
@@ -46,84 +45,78 @@ impl Game
 
 	pub fn timer_tick(&mut self)
 	{
-		if self.pause_control.is_not_paused()
+		self.timer_count+=1;
+		if self.timer_count > 20
 		{
-			self.timer_count+=1;
-			if self.timer_count > 20
-			{
-				self.timer_count = 0;
-				self.tetris.block_move(Direction::Down, &mut self.pause_control, &self.windows);
-			}
+			self.timer_count = 0;
+			self.tetris.block_move(Direction::Down, &self.windows, &self.random);
 		}
 	}
 
 	pub fn up(&mut self) 
 	{
-		if self.pause_control.is_not_paused()
-		{
-			self.tetris.block_rotate(&self.windows);
-		}
+		self.tetris.block_rotate(&self.windows);
 	}
 
 	pub fn down(&mut self)
 	{
-		if self.pause_control.is_not_paused()
-		{
-			self.tetris.block_move(Direction::Down, &mut self.pause_control, &self.windows);
-		}
+		self.tetris.block_move(Direction::Down, &self.windows, &self.random);
 	}
 		
 	pub fn left(&mut self)
 	{
-		if self.pause_control.is_not_paused()
-		{
-			self.tetris.block_move(Direction::Left, &mut self.pause_control, &self.windows);
-		}
+		self.tetris.block_move(Direction::Left, &self.windows, &self.random);
 	}
 
 	pub fn right(&mut self)
 	{
-		if self.pause_control.is_not_paused()
-		{
-			self.tetris.block_move(Direction::Right, &mut self.pause_control, &self.windows);
-		}
+		self.tetris.block_move(Direction::Right, &self.windows, &self.random);
 	}
 
 	pub fn pause(&mut self)
 	{
-		self.pause_control.pause();
+		self.tetris.pause();
 	}
 
 	pub fn toggle_pause(&mut self)
 	{
-		self.pause_control.toggle();
+		self.tetris.toggle();
 	}
 
 	pub fn help(&mut self)
 	{
-		let paused = self.pause_control.is_paused();
-		self.pause_control.pause();
+		let paused = self.tetris.is_paused();
+		self.tetris.pause();
 		self.windows.message_box(s!("h - Help\ni - About\nspace, return - Pause\nn - New game"), s!("Help"));
 		if !paused
 		{
-			self.pause_control.unpause();
+			self.tetris.unpause();
 		}
 	}
 
 	pub fn about(&mut self)
 	{
-		let paused = self.pause_control.is_paused();
-		self.pause_control.pause();
+		let paused = self.tetris.is_paused();
+		self.tetris.pause();
 		self.windows.message_box(s!("\n\tTetris 2001-2024 Selvin\t\n"), s!("About..."));
 		if !paused
 		{
-			self.pause_control.unpause();
+			self.tetris.unpause();
 		}
 	}
 
 	pub fn new_game(&mut self)
 	{
-		self.tetris.new_game(&self.windows);
-		self.pause_control.unpause();
+		self.tetris.new_game(&self.windows, &self.random);
+	}
+
+	pub fn random_init(&mut self) -> bool
+	{
+		return self.random.init();
+	}
+
+	pub fn random_release(&mut self)
+	{
+		return self.random.release();
 	}
 }

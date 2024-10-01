@@ -5,15 +5,10 @@ use windows_sys::Win32::System::LibraryLoader::GetModuleHandleA;
 use windows_sys::Win32::UI::Input::KeyboardAndMouse::{ VK_RIGHT, VK_LEFT, VK_UP, VK_DOWN, VK_SPACE, VK_RETURN, VK_H, VK_I, VK_N };
 use windows_sys::Win32::UI::WindowsAndMessaging::
 {
-	CreateWindowExA, DefWindowProcA, DispatchMessageA, GetMessageA, LoadAcceleratorsA, 
-	LoadIconA, LoadStringA, RegisterClassA, ShowWindow, TranslateAcceleratorA, TranslateMessage, 
-	WNDCLASSA, HACCEL, MSG,
-	CS_HREDRAW, CS_VREDRAW, CW_USEDEFAULT, SW_SHOWDEFAULT, WS_SYSMENU, WS_VISIBLE, 
-	WM_CREATE, WM_DESTROY, WM_PAINT, WM_TIMER, WM_KEYDOWN, WM_KILLFOCUS
+	CreateWindowExA, DefWindowProcA, DispatchMessageA, GetMessageA, GetWindowLongPtrA, LoadAcceleratorsA, LoadIconA, LoadStringA, RegisterClassA, SetWindowLongPtrA, ShowWindow, TranslateAcceleratorA, TranslateMessage, CREATESTRUCTA, CS_HREDRAW, CS_VREDRAW, CW_USEDEFAULT, GWLP_USERDATA, HACCEL, MSG, SW_SHOWDEFAULT, WM_CREATE, WM_DESTROY, WM_KEYDOWN, WM_KILLFOCUS, WM_PAINT, WM_TIMER, WNDCLASSA, WS_SYSMENU, WS_VISIBLE
 };
 use windows_sys::Win32::Foundation::{ POINT, HWND, WPARAM, LPARAM, LRESULT };
 use super::game::Game;
-use super::random;
 use super::res;
 
 const MAX_LOADSTRING: usize = 256;
@@ -27,8 +22,9 @@ pub unsafe fn real_main() -> i32
 	let window_class = [0u8; MAX_LOADSTRING].as_mut_ptr(); 
 	LoadStringA(hinstance, res::IDS_APP_TITLE, title, MAX_LOADSTRING as i32);
 	LoadStringA(hinstance, res::IDC_TETRIS, window_class, MAX_LOADSTRING as i32);
+	let mut game = Game::new();
 
-	if !random::init()
+	if !game.random_init()
 	{
 		return -1;
 	}
@@ -47,12 +43,12 @@ pub unsafe fn real_main() -> i32
 		hIcon: LoadIconA(hinstance, res::IDI_TETRIS  as *const u8)
 	};
 	RegisterClassA(&mut wndclass);
-
+	let game_ptr = &game as *const Game;
 	let hwnd = CreateWindowExA(0, window_class, title, WS_VISIBLE | WS_SYSMENU,
-		CW_USEDEFAULT, CW_USEDEFAULT, 230, 330, null_mut(), null_mut(), hinstance, null());
+		CW_USEDEFAULT, CW_USEDEFAULT, 230, 330, null_mut(), null_mut(), hinstance,  game_ptr as *const core::ffi::c_void);
 	if hwnd == null_mut()
 	{
-		random::release();
+		game.random_release();
 		return -1;
 	}
 	ShowWindow(hwnd, SW_SHOWDEFAULT);
@@ -67,11 +63,18 @@ pub unsafe fn real_main() -> i32
 			DispatchMessageA(&mut msg);
 		}
 	}
-	random::release();
+	game.random_release();
 	return 0;
 }
 
-static mut GAME: Game = Game::new();
+#[macro_export]
+macro_rules! get_game 
+{ 
+	($hwnd:expr) =>
+	{
+		&mut *(GetWindowLongPtrA($hwnd, GWLP_USERDATA) as *mut Game)
+	}
+}
 
 unsafe extern "system" fn wnd_proc(hwnd: HWND, message: u32, wparam: WPARAM, lparam: LPARAM) -> LRESULT
 {
@@ -79,62 +82,70 @@ unsafe extern "system" fn wnd_proc(hwnd: HWND, message: u32, wparam: WPARAM, lpa
 	{
 		WM_CREATE =>
 		{
-			GAME.init(hwnd, lparam);
+			let create_struct = *(lparam as *const CREATESTRUCTA);
+			let game = &mut *(create_struct.lpCreateParams as *mut Game);
+			game.init(hwnd, create_struct.hInstance);
+			SetWindowLongPtrA(hwnd, GWLP_USERDATA, create_struct.lpCreateParams as isize);
 		},
 		WM_PAINT =>
 		{
-			GAME.paint();
+			let game = get_game!(hwnd);
+			game.paint();
 		},
 		WM_TIMER => 
 		{
-			GAME.timer_tick();
+			let game = get_game!(hwnd);
+			game.timer_tick();
 		},
 		WM_DESTROY => 
 		{
-			GAME.destroy();
+			let game = get_game!(hwnd);
+			game.destroy();
 		},
 		WM_KEYDOWN =>
 		{
+			let game = get_game!(hwnd);
 			match wparam as u16
 			{
 				VK_UP =>
 				{
-					GAME.up();
+					game.up();
 				},
 				VK_DOWN =>
 				{
-					GAME.down();
+					game.down();
 				},
 				VK_LEFT =>
 				{
-					GAME.left();
+					game.left();
 				},
 				VK_RIGHT =>
 				{
-					GAME.right();
+					game.right();
 				},
 				VK_RETURN | VK_SPACE =>
 				{
-					GAME.toggle_pause();
+					game.toggle_pause();
 				},
 				VK_H =>
 				{
-					GAME.help();
+					game.help();
 				},
 				VK_I =>
 				{
-					GAME.about();
+					game.about();
 				},
 				VK_N =>
 				{
-					GAME.new_game();
+					game.new_game();
 				},
 				_ => {}
 			}
 		},
 		WM_KILLFOCUS =>
 		{
-			GAME.pause();
+			let game = get_game!(hwnd);
+			game.pause();
 		},
 		_ => return DefWindowProcA(hwnd, message, wparam, lparam),
 	}

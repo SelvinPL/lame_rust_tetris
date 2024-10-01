@@ -1,4 +1,4 @@
-#![no_std]
+//#![no_std]
 #![no_main]
 #![windows_subsystem = "windows"]
 
@@ -11,11 +11,11 @@ mod random;
 mod tetris;
 mod winc;
 mod res;
-mod pause_control;
 
 #[no_mangle]
 #[allow(non_snake_case)]
-fn mainCRTStartup()
+//fn mainCRTStartup()
+fn main()
 {
 	unsafe { ExitProcess(winmain::real_main() as u32); }
 }
