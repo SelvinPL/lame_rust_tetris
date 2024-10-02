@@ -1,4 +1,4 @@
-#[cfg(panic = "abort")]
+#[cfg(all(panic = "abort", not(debug_assertions)))]
 mod panic 
 {
 	use core::panic::PanicInfo;
