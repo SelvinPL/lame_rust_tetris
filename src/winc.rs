@@ -36,11 +36,6 @@ macro_rules! RGB
 	}
 }
 
-const STATIC_CLASS: PCSTR = s!("static");
-const TEXT_NEXT: PCSTR = s!("Next:");
-const NUMBERS: &[u8]= b"0123456789";
-const SCORE: &[u8] = b"\nScore: \n\n";
-
 impl WindowController
 {
 	pub const fn empty() -> Self
@@ -59,6 +54,8 @@ impl WindowController
 
 	pub fn new(hwnd: HWND, hinstance: HINSTANCE) -> Self
 	{ 
+		const STATIC_CLASS: PCSTR = s!("static");
+		const TEXT_NEXT: PCSTR = s!("Next:");
 		unsafe 
 		{
 			let dwstyle = WS_CHILD | WS_VISIBLE | SS_CENTER;
@@ -98,6 +95,8 @@ impl WindowController
 
 	pub fn show_score(&self, score_in: u32)
 	{
+		const NUMBERS: &[u8]= b"0123456789";
+		const SCORE: &[u8] = b"\nScore: \n\n";
 		const BASE: u32 = 10;
 		const MAX: u32 = 256;
 		let mut score = score_in;
