@@ -5,7 +5,11 @@ use windows_sys::Win32::System::LibraryLoader::GetModuleHandleA;
 use windows_sys::Win32::UI::Input::KeyboardAndMouse::{ VK_RIGHT, VK_LEFT, VK_UP, VK_DOWN, VK_SPACE, VK_RETURN, VK_H, VK_I, VK_N };
 use windows_sys::Win32::UI::WindowsAndMessaging::
 {
-	CreateWindowExA, DefWindowProcA, DispatchMessageA, GetMessageA, GetWindowLongPtrA, LoadAcceleratorsA, LoadIconA, LoadStringA, RegisterClassA, SetWindowLongPtrA, ShowWindow, TranslateAcceleratorA, TranslateMessage, CREATESTRUCTA, CS_HREDRAW, CS_VREDRAW, CW_USEDEFAULT, GWLP_USERDATA, HACCEL, MSG, SW_SHOWDEFAULT, WM_CREATE, WM_DESTROY, WM_KEYDOWN, WM_KILLFOCUS, WM_PAINT, WM_TIMER, WNDCLASSA, WS_SYSMENU, WS_VISIBLE
+	CreateWindowExA, DefWindowProcA, DispatchMessageA, GetMessageA, GetWindowLongPtrA, LoadAcceleratorsA, LoadIconA, LoadStringA, 
+	RegisterClassA, SetWindowLongPtrA, ShowWindow, TranslateAcceleratorA, TranslateMessage, 
+	CREATESTRUCTA, HACCEL, MSG, WNDCLASSA, 
+	CS_HREDRAW, CS_VREDRAW, CW_USEDEFAULT, GWLP_USERDATA, SW_SHOWDEFAULT, WM_CREATE, WM_DESTROY, WM_KEYDOWN, WM_KILLFOCUS, WM_PAINT, 
+	WM_TIMER, WS_SYSMENU, WS_VISIBLE
 };
 use windows_sys::Win32::Foundation::{ POINT, HWND, WPARAM, LPARAM, LRESULT };
 use super::game::Game;
@@ -72,7 +76,10 @@ macro_rules! get_game
 { 
 	($hwnd:expr) =>
 	{
-		&mut *(GetWindowLongPtrA($hwnd, GWLP_USERDATA) as *mut Game)
+		{
+			let game_ptr = GetWindowLongPtrA($hwnd, GWLP_USERDATA);
+			if game_ptr == 0 { panic!() } else { &mut *(game_ptr as *mut Game) }
+		}
 	}
 }
 
@@ -89,18 +96,15 @@ unsafe extern "system" fn wnd_proc(hwnd: HWND, message: u32, wparam: WPARAM, lpa
 		},
 		WM_PAINT =>
 		{
-			let game = get_game!(hwnd);
-			game.paint();
+			get_game!(hwnd).paint();
 		},
 		WM_TIMER => 
 		{
-			let game = get_game!(hwnd);
-			game.timer_tick();
+			get_game!(hwnd).timer_tick();
 		},
 		WM_DESTROY => 
 		{
-			let game = get_game!(hwnd);
-			game.destroy();
+			get_game!(hwnd).destroy();
 		},
 		WM_KEYDOWN =>
 		{
@@ -144,8 +148,7 @@ unsafe extern "system" fn wnd_proc(hwnd: HWND, message: u32, wparam: WPARAM, lpa
 		},
 		WM_KILLFOCUS =>
 		{
-			let game = get_game!(hwnd);
-			game.pause();
+			get_game!(hwnd).pause();
 		},
 		_ => return DefWindowProcA(hwnd, message, wparam, lparam),
 	}
