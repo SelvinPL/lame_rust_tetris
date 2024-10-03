@@ -18,10 +18,7 @@ windows-sys = { version = "0.59.0", features = [
 	"Win32_UI_Input_KeyboardAndMouse"
 ] }
 
-[profile.dev]
-panic ="abort"
-lto = "fat"
-
 [profile.release]
+opt-level="s"
 panic ="abort"
 lto = "fat"
