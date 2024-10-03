@@ -1,0 +1,26 @@
+name: Rust
+
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: write
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build:
+
+    runs-on: windows-latest
+
+    steps:
+    - uses: actions/checkout@v4
+    - name: 'Build & Release'
+      run: |
+        cargo build --release
+        Compress-Archive -Path target\release\tetris.exe -Destination tetris-win64.zip
+        gh release upload ${{github.event.release.tag_name}} tetris-win64.zip
+      env:
+        GITHUB_TOKEN: ${{ github.TOKEN }}
