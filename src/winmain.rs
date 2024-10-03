@@ -9,7 +9,7 @@ use windows_sys::Win32::UI::WindowsAndMessaging::
 	RegisterClassA, SetWindowLongPtrA, ShowWindow, TranslateAcceleratorA, TranslateMessage, 
 	CREATESTRUCTA, HACCEL, MSG, WNDCLASSA, 
 	CS_HREDRAW, CS_VREDRAW, CW_USEDEFAULT, GWLP_USERDATA, SW_SHOWDEFAULT, WM_CREATE, WM_DESTROY, WM_KEYDOWN, WM_KILLFOCUS, WM_PAINT, 
-	WM_TIMER, WS_SYSMENU, WS_VISIBLE
+	WM_TIMER, WS_SYSMENU, WS_VISIBLE, WS_MINIMIZEBOX
 };
 use windows_sys::Win32::Foundation::{ POINT, HWND, WPARAM, LPARAM, LRESULT };
 use super::game::Game;
@@ -48,7 +48,7 @@ pub unsafe fn real_main() -> i32
 	};
 	RegisterClassA(&mut wndclass);
 	let game_ptr = &game as *const Game;
-	let hwnd = CreateWindowExA(0, window_class, title, WS_VISIBLE | WS_SYSMENU,
+	let hwnd = CreateWindowExA(0, window_class, title, WS_VISIBLE | WS_SYSMENU | WS_MINIMIZEBOX,
 		CW_USEDEFAULT, CW_USEDEFAULT, 230, 330, null_mut(), null_mut(), hinstance,  game_ptr as *const core::ffi::c_void);
 	if hwnd == null_mut()
 	{
