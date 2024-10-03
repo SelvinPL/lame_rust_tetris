@@ -1,4 +1,4 @@
-name: Rust
+name: release
 
 on:
   release:
@@ -14,13 +14,22 @@ jobs:
   build:
 
     runs-on: windows-latest
-
+    name: ${{ matrix.target.name }}
+    strategy:
+      max-parallel: 2
+      fail-fast: false
+      matrix:
+        target: [ { target: x86_64-pc-windows-msvc, name: x64 }, { target: i686-pc-windows-msvc, name: x86 } ]
     steps:
-    - uses: actions/checkout@v4
-    - name: 'Build & Release'
+    - name: checkout
+      uses: actions/checkout@v4
+    - name: 'build'
       run: |
-        cargo build --release
-        Compress-Archive -Path target\release\tetris.exe -Destination tetris-win64.zip
-        gh release upload ${{github.event.release.tag_name}} tetris-win64.zip
+        rustup target add ${{ matrix.target.target }}
+        cargo build --release --target ${{ matrix.target.target }}
+    - name: 'release'
+      run: |
+        Compress-Archive -Path target\${{ matrix.target.target }}\release\tetris.exe -Destination tetris-${{ matrix.target.name }}.zip
+        gh release upload ${{github.event.release.tag_name}} tetris-${{ matrix.target.name }}.zip
       env:
         GITHUB_TOKEN: ${{ github.TOKEN }}

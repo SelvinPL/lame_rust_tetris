@@ -83,6 +83,12 @@ macro_rules! get_game
 	}
 }
 
+#[cfg(target_arch = "x86")]
+pub type POINTER = i32;
+
+#[cfg(target_arch = "x86_64")]
+pub type POINTER = isize;
+
 unsafe extern "system" fn wnd_proc(hwnd: HWND, message: u32, wparam: WPARAM, lparam: LPARAM) -> LRESULT
 {
 	match message 
@@ -92,7 +98,7 @@ unsafe extern "system" fn wnd_proc(hwnd: HWND, message: u32, wparam: WPARAM, lpa
 			let create_struct = *(lparam as *const CREATESTRUCTA);
 			let game = &mut *(create_struct.lpCreateParams as *mut Game);
 			game.init(hwnd, create_struct.hInstance);
-			SetWindowLongPtrA(hwnd, GWLP_USERDATA, create_struct.lpCreateParams as isize);
+			SetWindowLongPtrA(hwnd, GWLP_USERDATA, create_struct.lpCreateParams as POINTER);
 		},
 		WM_PAINT =>
 		{
