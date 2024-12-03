@@ -69,7 +69,7 @@ impl WindowController
 				hwnd, null_mut(), hinstance, null());			
 			WindowController 
 			{ 
-				hwnd: hwnd,
+				hwnd,
 				htimer: SetTimer(hwnd, 1, 0, None),
 				current_hdc: null_mut(), 
 				bitmap_hdc : null_mut(), 
