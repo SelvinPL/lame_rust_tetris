@@ -76,6 +76,7 @@ macro_rules! get_game
 { 
 	($hwnd:expr) =>
 	{
+		unsafe 
 		{
 			let game_ptr = GetWindowLongPtrA($hwnd, GWLP_USERDATA);
 			if game_ptr == 0 { panic!() } else { &mut *(game_ptr as *mut Game) }
@@ -89,11 +90,12 @@ pub type POINTER = i32;
 #[cfg(target_arch = "x86_64")]
 pub type POINTER = isize;
 
-unsafe extern "system" fn wnd_proc(hwnd: HWND, message: u32, wparam: WPARAM, lparam: LPARAM) -> LRESULT
+extern "system" fn wnd_proc(hwnd: HWND, message: u32, wparam: WPARAM, lparam: LPARAM) -> LRESULT
 {
 	match message 
 	{
 		WM_CREATE =>
+		unsafe
 		{
 			let create_struct = *(lparam as *const CREATESTRUCTA);
 			let game = &mut *(create_struct.lpCreateParams as *mut Game);
@@ -156,7 +158,7 @@ unsafe extern "system" fn wnd_proc(hwnd: HWND, message: u32, wparam: WPARAM, lpa
 		{
 			get_game!(hwnd).pause();
 		},
-		_ => return DefWindowProcA(hwnd, message, wparam, lparam),
+		_ => unsafe { return DefWindowProcA(hwnd, message, wparam, lparam) },
 	}
 	return 0;
 }
