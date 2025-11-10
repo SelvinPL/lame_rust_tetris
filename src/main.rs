@@ -29,7 +29,12 @@ fn main()
 
 #[cfg(not(debug_assertions))]
 #[no_mangle]
-extern "cdecl" fn memset(dest: isize, _:i32, _: usize) -> isize
+unsafe extern "C" fn memset(s: *mut u8, c: u8, n: usize) 
 {
-	return dest;
+	//panic!();
+	// for _ in 0..n
+	// {
+		
+	// 	*s = c;
+	// }
 }

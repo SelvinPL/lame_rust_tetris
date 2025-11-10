@@ -101,7 +101,9 @@ impl WindowController
 		const MAX: u32 = 256;
 		let mut score = score_in;
 		let mut buffer: [u8; MAX as usize] = [0u8; MAX as usize];
-		let mut i: usize = MAX as usize - 2;
+		let mut i: usize = MAX as usize - 1;
+		buffer[i] = 0;
+		i-=1;
 		loop
 		{
 			buffer[i] = NUMBERS[(score % BASE) as usize];				

@@ -226,6 +226,7 @@ impl Tetris
 		self.next_shape = SHAPES[self.next_shape_type][1];
 		windows.invalidate(ptr::null(), true);
 		self.new_block(windows, random);
+		windows.show_score(0);
 		self.paused = false;
 	}
 
