@@ -12,6 +12,8 @@ mod res;
 
 use windows_sys::Win32::System::Threading::ExitProcess;
 use winmain::real_main;
+#[cfg(not(debug_assertions))]
+use core::ptr;
 
 #[no_mangle]
 #[allow(non_snake_case)]
@@ -31,10 +33,13 @@ fn main()
 #[no_mangle]
 unsafe extern "C" fn memset(s: *mut u8, c: u8, n: usize) 
 {
-	//panic!();
-	// for _ in 0..n
-	// {
-		
-	// 	*s = c;
-	// }
+	let s = ptr::read_volatile(&s);
+	let c = ptr::read_volatile(&c);
+	let n = ptr::read_volatile(&n);
+
+	for i in 0..n {
+		ptr::write(s.add(i), c);
+	}
+
+	let _ = ptr::read_volatile(&s);
 }

@@ -96,7 +96,7 @@ impl WindowController
 	pub fn show_score(&self, score_in: u32)
 	{
 		const NUMBERS: &[u8]= b"0123456789";
-		const SCORE: &[u8] = b"\nScore: \n\n";
+		const SCORE: &[u8] = b"\nScore:\n\n";
 		const BASE: u32 = 10;
 		const MAX: u32 = 256;
 		let mut score = score_in;

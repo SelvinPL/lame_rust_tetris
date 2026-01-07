@@ -4,10 +4,10 @@ version = "0.1.1"
 edition = "2021"
 
 [build-dependencies]
-embed-resource = "3.0.5"
+embed-resource = "3.0.6"
 
 [dependencies]
-windows-sys = { version = "0.60.0", features = [
+windows-sys = { version = "0.61.2", features = [
 	"Win32_Foundation",
 	"Win32_UI_WindowsAndMessaging",
 	"Win32_System_Threading",

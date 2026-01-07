@@ -139,9 +139,7 @@ impl Tetris
 	fn check_collision(&mut self, direction: &Direction, shape_to_check: i32) -> bool
 	{
 		let mut dx: usize = 0;
-		let mut dy: usize = 0;
-			//let shape_to_check = match direction { Direction::None => self.rotated_shape, _ => self.current_shape };
-			
+		let mut dy: usize = 0;			
 			
 		match direction 
 		{
