@@ -7,7 +7,7 @@ edition = "2021"
 embed-resource = "3.0.6"
 
 [dependencies]
-windows-sys = { version = "0.61.2", features = [
+windows-sys = { version = "0.61.2", default-features = false, features = [
 	"Win32_Foundation",
 	"Win32_UI_WindowsAndMessaging",
 	"Win32_System_Threading",
@@ -22,3 +22,4 @@ windows-sys = { version = "0.61.2", features = [
 opt-level="s"
 panic ="abort"
 lto = "fat"
+strip = true

@@ -1,4 +1,3 @@
-
 #![windows_subsystem = "windows"]
 #![cfg_attr(not(debug_assertions), no_std, no_main)]
 
