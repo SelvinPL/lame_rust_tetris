@@ -11,7 +11,6 @@ fn main()
 	if target_env == "gnu" {
 		println!("cargo::rustc-link-arg-bins=-Wl,--major-subsystem-version,6");
 		println!("cargo::rustc-link-arg-bins=-Wl,--minor-subsystem-version,0");
-		println!("cargo::rustc-link-arg-bins=-Wl,--subsystem,windows");
 	}
 	if profile != "debug" {
 		if target_env == "gnu" {
