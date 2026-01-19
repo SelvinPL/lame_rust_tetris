@@ -1,4 +1,3 @@
-
 use windows_sys::core::s;
 use windows_sys::Win32::Foundation::{HINSTANCE, HWND};
 use super::tetris::{ Tetris, Direction };
@@ -98,7 +97,7 @@ impl Game
 	{
 		let paused = self.tetris.is_paused();
 		self.tetris.pause();
-		self.windows.message_box(s!("\n\tTetris 2001-2024 Selvin\t\n"), s!("About..."));
+		self.windows.message_box(s!("\n\tTetris 2001-2024\t\n"), s!("About..."));
 		if !paused
 		{
 			self.tetris.unpause();

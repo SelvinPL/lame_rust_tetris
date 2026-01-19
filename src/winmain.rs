@@ -6,12 +6,12 @@ use windows_sys::Win32::UI::Input::KeyboardAndMouse::{ VK_RIGHT, VK_LEFT, VK_UP,
 use windows_sys::Win32::UI::WindowsAndMessaging::
 {
 	CreateWindowExA, DefWindowProcA, DispatchMessageA, GetMessageA, GetWindowLongPtrA, LoadAcceleratorsA, LoadIconA, LoadStringA, 
-	RegisterClassA, SetWindowLongPtrA, ShowWindow, TranslateAcceleratorA, TranslateMessage, 
+	RegisterClassA, SetWindowLongPtrA, ShowWindow, TranslateAcceleratorA, TranslateMessage, AdjustWindowRect,
 	CREATESTRUCTA, HACCEL, MSG, WNDCLASSA, 
 	CS_HREDRAW, CS_VREDRAW, CW_USEDEFAULT, GWLP_USERDATA, SW_SHOWDEFAULT, WM_CREATE, WM_DESTROY, WM_KEYDOWN, WM_KILLFOCUS, WM_PAINT, 
 	WM_TIMER, WS_SYSMENU, WS_VISIBLE, WS_MINIMIZEBOX
 };
-use windows_sys::Win32::Foundation::{ POINT, HWND, WPARAM, LPARAM, LRESULT };
+use windows_sys::Win32::Foundation::{ POINT, HWND, WPARAM, LPARAM, LRESULT, RECT };
 use super::game::Game;
 use super::res;
 
@@ -48,8 +48,19 @@ pub unsafe fn real_main() -> i32
 	};
 	RegisterClassA(&mut wndclass);
 	let game_ptr = &game as *const Game;
-	let hwnd = CreateWindowExA(0, window_class, title, WS_VISIBLE | WS_SYSMENU | WS_MINIMIZEBOX,
-		CW_USEDEFAULT, CW_USEDEFAULT, 230, 330, null_mut(), null_mut(), hinstance,  game_ptr as *const core::ffi::c_void);
+	let mut rect = RECT 
+	{
+		left: 0,
+		top: 0,
+		right: 230,
+		bottom: 330,
+	};
+	let style = WS_VISIBLE | WS_SYSMENU | WS_MINIMIZEBOX;
+    AdjustWindowRect(&mut rect, style, 0);
+	let width = rect.right - rect.left;   // To będzie np. 816
+	let height = rect.bottom - rect.top;
+	let hwnd = CreateWindowExA(0, window_class, title, style,
+		CW_USEDEFAULT, CW_USEDEFAULT, width, height, null_mut(), null_mut(), hinstance,  game_ptr as *const core::ffi::c_void);
 	if hwnd == null_mut()
 	{
 		game.random_release();

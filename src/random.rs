@@ -1,14 +1,9 @@
-
 use core::ptr::{ null , addr_of_mut};
-use windows_sys::core::{ PCSTR, s };
-use windows_sys::Win32::Foundation::{ GetLastError, NTE_BAD_KEYSET };
 use windows_sys::Win32::Security::Cryptography::
 {
 	CryptAcquireContextA, CryptReleaseContext, CryptGenRandom,
-	PROV_RSA_FULL, CRYPT_NEWKEYSET
+	PROV_RSA_FULL, CRYPT_VERIFYCONTEXT
 };
-
-const RANDOM_CONTAINER: PCSTR = s!("RANDOM_CONTAINER");
 
 pub struct Random
 {
@@ -23,15 +18,8 @@ impl Random
 	{
 		unsafe 
 		{
-			if CryptAcquireContextA(addr_of_mut!(self.hcryptprov), RANDOM_CONTAINER, null(), PROV_RSA_FULL, 0) == 0
+			if CryptAcquireContextA(addr_of_mut!(self.hcryptprov), null(), null(), PROV_RSA_FULL, CRYPT_VERIFYCONTEXT) == 0
 			{
-				if GetLastError() == NTE_BAD_KEYSET as u32
-				{
-					if CryptAcquireContextA(addr_of_mut!(self.hcryptprov), RANDOM_CONTAINER, null(), PROV_RSA_FULL, CRYPT_NEWKEYSET) == 0
-					{
-						return false;
-					}
-				}
 				return false;
 			}
 			return true;

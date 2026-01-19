@@ -1,6 +1,6 @@
 [package]
 name = "tetris"
-version = "0.2.0"
+version = "0.2.1"
 edition = "2021"
 
 [build-dependencies]
@@ -19,7 +19,7 @@ windows-sys = { version = "0.61.2", default-features = false, features = [
 ] }
 
 [profile.release]
-opt-level="s"
+opt-level="z"
 panic ="abort"
 lto = "fat"
 strip = true
